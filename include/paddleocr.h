@@ -26,13 +26,13 @@ public:
 	explicit PPOCR();
 	~PPOCR();
 
-	std::vector<OCRPredictResult> ocr(cv::Mat img);
+	std::vector<OCRPredictResult> ocr(cv::Mat& img, cv::Mat& dst, int& class_id);
 
 protected:
-	IdDetector* id_detector_ = nullptr;
-	Detector* detector_ = nullptr;
+	IDCardDetector* id_detector_ = nullptr;
+	Detector* ocr_detector_ = nullptr;
 	//Classifier *classifier_ = nullptr;
-	Recognizer* recognizer_ = nullptr;
+	Recognizer* ocr_recognizer_ = nullptr;
 };
 
 } // namespace PaddleOCR

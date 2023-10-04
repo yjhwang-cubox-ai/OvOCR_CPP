@@ -1,14 +1,15 @@
-#include "opencv2/core.hpp"
-#include "opencv2/imgcodecs.hpp"
-#include "opencv2/imgproc.hpp"
+#include "opencv2/opencv.hpp"
 #include <iostream>
 #include <vector>
 #include "args.h"
 #include "paddleocr.h"
 #include "paddlestructure.h"
 #include <gflags/gflags.h>
+#include <filesystem>
 
 using namespace PaddleOCR;
+
+#define MODE 0
 
 void check_params()
 {
@@ -38,16 +39,59 @@ int main(int argc, char *argv[])
 {
   gflags::ParseCommandLineFlags(&argc, &argv, true);
   check_params();
-
+  
+#if MODE
   // read image
-  cv::Mat src_img = imread(FLAGS_input);
+  cv::Mat src_img = imread("../data/test.jpg");
+  cv::Mat aligned_img;
+  int class_id;
 
   if (FLAGS_type == "ocr")
   {
-    PPOCR ppocr;
-    std::vector<OCRPredictResult> ocr_result = ppocr.ocr(src_img);
-    Utility::print_result(ocr_result);
-    Utility::VisualizeBboxes(src_img, ocr_result,
-                             "./ocr_result.jpg");
+      PPOCR ppocr;
+      std::vector<OCRPredictResult> ocr_result = ppocr.ocr(src_img, aligned_img, class_id);
+
+      Utility::print_result(ocr_result);
+      Utility::VisualizeBboxes(aligned_img, ocr_result,
+          "./ocr_result.jpg", class_id);
   }
+
+#else
+  // 디렉토리 내 모든 이미지 파일에 대해 추론
+  std::string directoryPath = FLAGS_input;
+  std::vector<std::string> imageFilePaths;
+
+  for (const auto& entry : std::filesystem::directory_iterator(directoryPath)) {
+      if (entry.is_regular_file()) {
+          std::string extension = entry.path().extension().string();
+          if (extension == ".jpg" || extension == ".jpeg" || extension == ".png" || extension == ".bmp" || extension == ".gif") {
+              imageFilePaths.push_back(entry.path().string());
+          }
+      }
+  }
+
+  PPOCR ppocr;
+
+  int idx = 0;
+  for (auto& img : imageFilePaths) {
+      ++idx;
+
+      cv::Mat src_img = imread(img);
+      cv::Mat aligned_img;
+      std::string dst_name = "result_" + std::to_string(idx) + ".jpg";
+      int class_id;
+
+
+      std::vector<OCRPredictResult> ocr_result = ppocr.ocr(src_img, aligned_img, class_id);
+
+      Utility::print_result(ocr_result);
+      Utility::VisualizeBboxes(aligned_img, ocr_result,
+          dst_name, class_id);
+  }
+
+
+#endif // USING_PATH
+
+
+
 }

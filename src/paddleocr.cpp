@@ -14,42 +14,49 @@
 
 #include "args.h"
 #include "paddleocr.h"
+#include "opencv2/opencv.hpp"
 
 namespace PaddleOCR {
-  
-PPOCR::PPOCR() {
-	this->id_detector_ = new IdDetector("../model/yolov5n-seg-idcard.onnx");
-	//this->detector_ = new Detector(FLAGS_det_model_dir);
-	//this->recognizer_ = new Recognizer(FLAGS_rec_model_dir, FLAGS_label_dir);
-};
 
-std::vector<OCRPredictResult> PPOCR::ocr(cv::Mat img) {
-  std::vector<OCRPredictResult> ocr_result;
+	PPOCR::PPOCR() {
+		this->id_detector_ = new IDCardDetector("../model/yolov5n-seg-idcard_class.onnx");
+		this->ocr_detector_ = new Detector(FLAGS_det_model_dir);
+		this->ocr_recognizer_ = new Recognizer(FLAGS_rec_model_dir, FLAGS_label_dir);
+	};
 
-  this->id_detector_->Run(img);
-  
-  // detect the sentence in input image
-  this->detector_->Run(img, ocr_result);
-  // crop image
-  std::vector<cv::Mat> img_list;
-  for (int j = 0; j < ocr_result.size(); j++) {
-    cv::Mat crop_img;
-    crop_img = Utility::GetRotateCropImage(img, ocr_result[j].box);
-    img_list.push_back(crop_img);
-  }
+	std::vector<OCRPredictResult> PPOCR::ocr(cv::Mat& img, cv::Mat& dst, int& class_id) {
+		std::vector<OCRPredictResult> ocr_result;
+		cv::Mat IDcard;
 
-  // recognize the words in sentence and print them
-  this->recognizer_->Run(img_list, ocr_result);
+		this->id_detector_->Run(img, IDcard, class_id);
 
-  return ocr_result;
-}
+		// detect the sentence in input image
+		this->ocr_detector_->Run(IDcard, ocr_result);
+		// crop image
+		std::vector<cv::Mat> img_list;
+		for (int j = 0; j < ocr_result.size(); j++) {
+			cv::Mat crop_img;
+			crop_img = Utility::GetRotateCropImage(IDcard, ocr_result[j].box);
+			img_list.push_back(crop_img);
+		}
 
-PPOCR::~PPOCR() {
-  if (this->detector_ != nullptr) {
-    delete this->detector_;
-  }
-  if (this->recognizer_ != nullptr) {
-    delete this->recognizer_;
-  }
-}
+		// recognize the words in sentence and print them
+		this->ocr_recognizer_->Run(img_list, ocr_result);
+
+		dst = IDcard.clone();
+
+		return ocr_result;
+	}
+
+	PPOCR::~PPOCR() {
+		if (this->id_detector_ != nullptr) {
+			delete this->id_detector_;
+		}
+		if (this->ocr_detector_ != nullptr) {
+			delete this->ocr_detector_;
+		}
+		if (this->ocr_recognizer_ != nullptr) {
+			delete this->ocr_recognizer_;
+		}
+	}
 } // namespace PaddleOCR

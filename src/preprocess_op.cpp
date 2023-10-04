@@ -159,11 +159,11 @@ void Resize::Run(const cv::Mat &img, cv::Mat &resize_img, const int h,
   cv::resize(img, resize_img, cv::Size(w, h));
 }
 
-void ResizeIdcard::Run(const cv::Mat& img, cv::Mat& resize_img, int limit_side_len, float& scale) {
+void ResizeIdcard::Run(const cv::Mat& img, cv::Mat& resize_img, int resize_side_len, float& scale) {
 
     int h = img.cols;
     int w = img.rows;
-    scale = float(limit_side_len) / float(std::max(h, w));
+    scale = float(resize_side_len) / float(std::max(h, w));
 
     if (scale != 1) {
         int interpolation = (scale < 1.0) ? cv::INTER_AREA : cv::INTER_LINEAR;
@@ -171,9 +171,9 @@ void ResizeIdcard::Run(const cv::Mat& img, cv::Mat& resize_img, int limit_side_l
     }
 
     int top_pad = 0;
-    int bottom_pad = limit_side_len - resize_img.rows;
+    int bottom_pad = resize_side_len - resize_img.rows;
     int left_pad = 0;
-    int right_pad = limit_side_len - resize_img.cols;
+    int right_pad = resize_side_len - resize_img.cols;
     
     cv::copyMakeBorder(resize_img, resize_img, top_pad, bottom_pad, left_pad, right_pad, cv::BORDER_CONSTANT, cv::Scalar(0, 0, 0));
 };

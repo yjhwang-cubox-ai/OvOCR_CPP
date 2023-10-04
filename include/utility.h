@@ -56,7 +56,8 @@ public:
 
   static void VisualizeBboxes(const cv::Mat &srcimg,
                               const std::vector<OCRPredictResult> &ocr_result,
-                              const std::string &save_path);
+                              const std::string &save_path,
+                              int& class_id);
 
   static void VisualizeBboxes(const cv::Mat &srcimg,
                               const StructurePredictResult &structure_result,
